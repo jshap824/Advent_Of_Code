@@ -405,7 +405,7 @@ def day6_alternate():
     record = int("".join([str(x) for x in records]))
 
     part_2 = ways_to_win(race_time, record)
-    
+
     # Return results
     return part_1, part_2
 
@@ -414,24 +414,25 @@ def day6_alternate():
 
 @time_this_func
 def day7():
-    #Input parsing
+    # Input parsing
     with open("day7.txt") as f:
         raw = f.read()[:-1].split("\n")
-        
+
     split_raw = [x.split() for x in raw]
     hands = [x[0] for x in split_raw]
     bids = [int(x[1]) for x in split_raw]
-    
-    #Part 1
-    card_strength = {"A":13, "K":12, "Q":11, "J":10, "T":9, "9":8, "8":7, "7":6, "6":5, "5":4, "4":3, "3":2, "2":1}
-    
+
+    # Part 1
+    card_strength = {"A": 13, "K": 12, "Q": 11, "J": 10, "T": 9,
+                     "9": 8, "8": 7, "7": 6, "6": 5, "5": 4, "4": 3, "3": 2, "2": 1}
+
     def hand_strength(hand):
         hand_count = [hand.count(x) for x in set(hand)]
         if hand_count == [5]:
             return 7
         if max(hand_count) == 4:
             return 6
-        if sorted(hand_count) == [2,3]:
+        if sorted(hand_count) == [2, 3]:
             return 5
         if 3 in hand_count:
             return 4
@@ -441,57 +442,53 @@ def day7():
             return 2
         else:
             return 1
-        
-    for i in range(4,-1,-1):
-        hands, bids = zip(*sorted(zip(hands, bids), key = lambda x: card_strength[x[0][i]], reverse = True))
-    
-    hands, bids = zip(*sorted(zip(hands, bids), key = lambda x: hand_strength(x[0]), reverse = True))
-    hands = hands[::-1]
-    bids = bids[::-1]
-    
-    total_winnings = sum([(i+1)*b for i, b in enumerate(bids)])
-    old_hands = hands
-    old_bids = bids
-    
+
+    for i in range(4, -1, -1):
+        hands, bids = zip(
+            *sorted(zip(hands, bids), key=lambda x: card_strength[x[0][i]], reverse=True))
+
+    hands, bids = zip(*sorted(zip(hands, bids), key=lambda x: hand_strength(x[0]), reverse=True))
+
+    total_winnings = sum([(i+1)*b for i, b in enumerate(bids[::-1])])
+
     # Part 2
     card_strength["J"] = 0
-    
+
     def better_hand_than(hand_1, compare_to_hand):
-        if "J" in "".join(hand_1 + compare_to_hand):
-            raise Exception("OOPS")
         comparison = [hand_1, compare_to_hand]
-        for i in range(4,-1,-1):
-            comparison = sorted(comparison, key = lambda x: card_strength[x[i]], reverse = True)
-    
-        comparison = sorted(comparison, key = lambda x: hand_strength(x), reverse = True)
-        
+        for i in range(4, -1, -1):
+            comparison = sorted(comparison, key=lambda x: card_strength[x[i]], reverse=True)
+
+        comparison = sorted(comparison, key=lambda x: hand_strength(x), reverse=True)
+
         return comparison[0] == hand_1
-    
+
     def best_hand(hand):
         j_inds = [i for i, c in enumerate(hand) if c == "J"]
         split_hand = [x for x in hand]
-        
-        j_options = product("AKQT98765432", repeat = len(j_inds))
-        best = hand.replace("J","2")
-        
+
+        j_options = product("AKQT98765432", repeat=len(j_inds))
+        best = hand.replace("J", "2")
+
         for j_option in j_options:
-            for j_option_ind, j_ind in enumerate(j_inds):
-                split_hand[j_ind] = j_option[j_option_ind]
+            for j_sub, j_ind in zip(j_option, j_inds):
+                split_hand[j_ind] = j_sub
             if better_hand_than("".join(split_hand), best):
                 best = "".join(split_hand)
-                    
+
         return best
-    
-    hands = [(hand, best_hand(hand)) for hand in hands]
-    
-    for i in range(4,-1,-1):
-        hands, bids = zip(*sorted(zip(hands, bids), key = lambda x: card_strength[x[0][0][i]], reverse = True))
-    
-    hands, bids = zip(*sorted(zip(hands, bids), key = lambda x: hand_strength(x[0][1]), reverse = True))
-    hands = hands[::-1]
-    bids = bids[::-1]
-    
-    total_winnings_wild = sum([(i+1)*b for i, b in enumerate(bids)])
-    
+
+    original_hands = hands
+    wilded_hands = [best_hand(hand) for hand in hands]
+
+    for i in range(4, -1, -1):
+        original_hands, wilded_hands, bids = zip(
+            *sorted(zip(original_hands, wilded_hands, bids), key=lambda x: card_strength[x[0][i]], reverse=True))
+
+    original_hands, wilded_hands, bids = zip(
+        *sorted(zip(original_hands, wilded_hands, bids), key=lambda x: hand_strength(x[1]), reverse=True))
+
+    total_winnings_wild = sum([(i+1)*b for i, b in enumerate(bids[::-1])])
+
     # Return results
     return total_winnings, total_winnings_wild
