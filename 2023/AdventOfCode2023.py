@@ -464,19 +464,27 @@ def day7():
         return comparison[0] == hand_1
 
     def best_hand(hand):
-        j_inds = [i for i, c in enumerate(hand) if c == "J"]
-        split_hand = [x for x in hand]
+        # Old Version (try every hand)
+        # j_inds = [i for i, c in enumerate(hand) if c == "J"]
+        # split_hand = [x for x in hand]
 
-        j_options = product("AKQT98765432", repeat=len(j_inds))
-        best = hand.replace("J", "2")
+        # j_options = product("AKQT98765432", repeat=len(j_inds))
+        # best = hand.replace("J", "2")
 
-        for j_option in j_options:
-            for j_sub, j_ind in zip(j_option, j_inds):
-                split_hand[j_ind] = j_sub
-            if better_hand_than("".join(split_hand), best):
-                best = "".join(split_hand)
+        # for j_option in j_options:
+        #     for j_sub, j_ind in zip(j_option, j_inds):
+        #         split_hand[j_ind] = j_sub
+        #     if better_hand_than("".join(split_hand), best):
+        #         best = "".join(split_hand)
 
-        return best
+        # return best
+        
+        hand_counts = {c:hand.count(c) for c in set(hand) if c != "J"}
+        joker_to_become = sorted(hand_counts, key = lambda x: card_strength[x], reverse = True)
+        joker_to_become = sorted(joker_to_become, key = lambda x: hand_counts[x], reverse = True)
+        if len(joker_to_become) == 0:
+            joker_to_become.append("A")
+        return hand.replace("J",joker_to_become[0])
 
     original_hands = hands
     wilded_hands = [best_hand(hand) for hand in hands]
