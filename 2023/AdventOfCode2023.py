@@ -594,3 +594,46 @@ def day8():
 
     # Return results
     return AAA_ZZZ_steps, steps_LCM
+
+# %% Day 9: Mirage Maintenance
+
+
+@time_this_func
+def day9():
+    # Input parsing
+    with open("day9.txt") as f:
+        raw = f.read()[:-1]
+
+    raw_sequences = [[int(x) for x in y.split()] for y in raw.split("\n")]
+
+    # Part 1
+    def get_next(sequence):
+        progression = [sequence]
+        while progression[-1].count(0) != len(progression[-1]):
+            progression.append([])
+            for i in range(1, len(progression[-2])):
+                progression[-1].append(progression[-2][i] - progression[-2][i-1])
+
+        progression[-1].append(0)
+        for i in range(len(progression)-2, -1, -1):
+            progression[i].append(progression[i][-1] + progression[i+1][-1])
+
+        return progression
+
+    progressions = []
+    for sequence in raw_sequences:
+        progressions.append(get_next(sequence))
+
+    next_total = sum([p[0][-1] for p in progressions])
+
+    # Part 2
+    for j in range(len(progressions)):
+        progressions[j][-1] = [0] + progressions[j][-1]
+        for i in range(len(progressions[j])-2, -1, -1):
+            progressions[j][i] = [progressions[j][i][0] -
+                                  progressions[j][i+1][0]] + progressions[j][i]
+
+    previous_total = sum([p[0][0] for p in progressions])
+
+    # Return results
+    return next_total, previous_total
