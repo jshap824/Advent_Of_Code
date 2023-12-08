@@ -454,14 +454,15 @@ def day7():
     # Part 2
     card_strength["J"] = 0
 
-    def better_hand_than(hand_1, compare_to_hand):
-        comparison = [hand_1, compare_to_hand]
-        for i in range(4, -1, -1):
-            comparison = sorted(comparison, key=lambda x: card_strength[x[i]], reverse=True)
+    # Old Version (try every hand)
+    # def better_hand_than(hand_1, compare_to_hand):
+    #     comparison = [hand_1, compare_to_hand]
+    #     for i in range(4, -1, -1):
+    #         comparison = sorted(comparison, key=lambda x: card_strength[x[i]], reverse=True)
 
-        comparison = sorted(comparison, key=lambda x: hand_strength(x), reverse=True)
+    #     comparison = sorted(comparison, key=lambda x: hand_strength(x), reverse=True)
 
-        return comparison[0] == hand_1
+    #     return comparison[0] == hand_1
 
     def best_hand(hand):
         # Old Version (try every hand)
@@ -478,13 +479,13 @@ def day7():
         #         best = "".join(split_hand)
 
         # return best
-        
-        hand_counts = {c:hand.count(c) for c in set(hand) if c != "J"}
-        joker_to_become = sorted(hand_counts, key = lambda x: card_strength[x], reverse = True)
-        joker_to_become = sorted(joker_to_become, key = lambda x: hand_counts[x], reverse = True)
+
+        hand_counts = {c: hand.count(c) for c in set(hand) if c != "J"}
+        joker_to_become = sorted(hand_counts, key=lambda x: card_strength[x], reverse=True)
+        joker_to_become = sorted(joker_to_become, key=lambda x: hand_counts[x], reverse=True)
         if len(joker_to_become) == 0:
             joker_to_become.append("A")
-        return hand.replace("J",joker_to_become[0])
+        return hand.replace("J", joker_to_become[0])
 
     original_hands = hands
     wilded_hands = [best_hand(hand) for hand in hands]
@@ -500,3 +501,96 @@ def day7():
 
     # Return results
     return total_winnings, total_winnings_wild
+
+# %% Day 8: Haunted Wasteland
+
+
+@time_this_func
+def day8():
+    # Input parsing
+    with open("day8.txt") as f:
+        raw = f.read()
+
+    turns, links_raw = raw.split("\n\n")
+
+    links = {}
+    for link_line in links_raw[:-1].split("\n"):
+        link_from, link_to = link_line.split(" = (")
+        link_left, link_right = link_to[:-1].split(", ")
+        links[link_from] = {"L": link_left, "R": link_right}
+
+    # Part 1
+    def instructions():
+        while True:
+            for x in turns:
+                yield x
+
+    turn = instructions()
+
+    curr = "AAA"
+    steps = 0
+    while curr != "ZZZ":
+        steps += 1
+        curr = links[curr][next(turn)]
+
+    AAA_ZZZ_steps = steps
+
+    # Part 2
+    currs = [x for x in links if x[-1] == "A"]
+
+    steps = []
+    for curr in currs:
+        steps.append(0)
+        turn = instructions()
+        while curr[-1] != "Z":
+            steps[-1] += 1
+            curr = links[curr][next(turn)]
+
+    def is_prime(num):
+        if num <= 1:
+            return False
+        if num % 2 == 0 and num != 2:
+            return False
+        if num % 3 == 0 and num != 3:
+            return False
+        if num % 5 == 0 and num != 5:
+            return False
+        for i in range(2, int(sqrt(num)) + 1):
+            if num % i == 0:
+                return False
+        else:
+            return True
+
+    def get_factor_pair(num):
+        for i in range(2, num):
+            if num % i == 0:
+                return [i, num//i]
+
+    def get_prime_factors(num):
+        primes = set()
+        not_primes = set()
+        prime_factors = [num]
+        while False in [x in primes for x in prime_factors]:
+            factors = []
+            for n in prime_factors:
+                if n in not_primes or not is_prime(n):
+                    not_primes.add(num)
+                    factors += get_factor_pair(n)
+                else:
+                    primes.add(n)
+                    factors += [n]
+            prime_factors = factors
+
+        return {x: prime_factors.count(x) for x in set(prime_factors)}
+
+    prime_factors_union = {}
+    for step in steps:
+        prime_factors = get_prime_factors(step)
+        for factor, n in prime_factors.items():
+            if factor not in prime_factors_union or prime_factors_union[factor] < n:
+                prime_factors_union[factor] = n
+
+    steps_LCM = prod([p**n for p, n in prime_factors_union.items()])
+
+    # Return results
+    return AAA_ZZZ_steps, steps_LCM
