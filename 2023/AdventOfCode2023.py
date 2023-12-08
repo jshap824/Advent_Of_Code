@@ -607,22 +607,23 @@ def day9():
     raw_sequences = [[int(x) for x in y.split()] for y in raw.split("\n")]
 
     # Part 1
-    def get_next(sequence):
+    def get_progression(sequence):
         progression = [sequence]
         while progression[-1].count(0) != len(progression[-1]):
             progression.append([])
             for i in range(1, len(progression[-2])):
                 progression[-1].append(progression[-2][i] - progression[-2][i-1])
 
-        progression[-1].append(0)
-        for i in range(len(progression)-2, -1, -1):
-            progression[i].append(progression[i][-1] + progression[i+1][-1])
-
         return progression
 
     progressions = []
     for sequence in raw_sequences:
-        progressions.append(get_next(sequence))
+        progressions.append(get_progression(sequence))
+    
+    for j in range(len(progressions)):
+        progressions[j][-1].append(0)
+        for i in range(len(progressions[j])-2, -1, -1):
+            progressions[j][i].append(progressions[j][i][-1] + progressions[j][i+1][-1])
 
     next_total = sum([p[0][-1] for p in progressions])
 
@@ -637,3 +638,101 @@ def day9():
 
     # Return results
     return next_total, previous_total
+
+# %% Day 10: Pipe Maze
+
+
+@time_this_func
+def day10():
+    # Input parsing
+    with open("day10.txt") as f:
+        raw = f.read()[:-1]
+        
+    pipe_map = np.array([[x for x in y] for y in raw.split("\n")])
+    
+    # Part 1
+    rows = pipe_map.shape[0]
+    cols = pipe_map.shape[1]
+    
+    start = tuple([int(x[0]) for x in np.where(pipe_map == "S")])
+    
+    def get_first_step(loc):
+        if loc[0] != 0 and pipe_map[loc[0]-1, loc[1]] in {"|", "7", "F"}:
+            return (loc[0]-1, loc[1])
+        if loc[0] < rows and pipe_map[loc[0]+1, loc[1]] in {"|", "J", "L"}:
+            return (loc[0]+1, loc[1])
+        if loc[1] != 0 and pipe_map[loc[0], loc[1]-1] in {"-", "F", "L"}:
+            return (loc[0], loc[1]-1)
+        if loc[1] < cols and pipe_map[loc[0], loc[1]+1] in {"-", "7", "J"}:
+            return (loc[0], loc[1]+1)
+    
+    def next_loc(loc, last_loc):
+        if pipe_map[loc] == "-":
+            return (loc[0], loc[1] + loc[1] - last_loc[1])
+        if pipe_map[loc] == "|":
+            return (loc[0] + loc[0] - last_loc[0], loc[1])
+        if pipe_map[loc] == "L":
+            if last_loc[0] == loc[0]:
+                return (loc[0]-1, loc[1])
+            else:
+                return (loc[0], loc[1]+1)
+        if pipe_map[loc] == "J":
+            if last_loc[0] == loc[0]:
+                return (loc[0]-1, loc[1])
+            else:
+                return (loc[0], loc[1]-1)
+        if pipe_map[loc] == "7":
+            if last_loc[0] == loc[0]:
+                return (loc[0]+1, loc[1])
+            else:
+                return (loc[0], loc[1]-1)
+        if pipe_map[loc] == "F":
+            if last_loc[0] == loc[0]:
+                return (loc[0]+1, loc[1])
+            else:
+                return (loc[0], loc[1]+1)
+    
+    pipe_loop = [start, get_first_step(start)]
+    
+    while True:
+        loc = next_loc(pipe_loop[-1], pipe_loop[-2])
+        
+        if loc == start:
+            break
+        
+        pipe_loop.append(loc)
+        
+    farthest_steps = len(pipe_loop)//2
+    
+    # Part 2
+    start_neighbors = {pipe_loop[1], pipe_loop[-1]}
+    
+    if start_neighbors == {(start[0],start[1]-1), (start[0],start[1]+1)}:
+        pipe_map[start] = "-"
+    elif start_neighbors == {(start[0]-1,start[1]), (start[0]+1,start[1])}:
+        pipe_map[start] = "|"
+    elif start_neighbors == {(start[0]-1,start[1]), (start[0],start[1]+1)}:
+        pipe_map[start] = "L"
+    elif start_neighbors == {(start[0]-1,start[1]), (start[0],start[1]-1)}:
+        pipe_map[start] = "J"
+    elif start_neighbors == {(start[0]+1,start[1]), (start[0],start[1]-1)}:
+        pipe_map[start] = "7"
+    elif start_neighbors == {(start[0]+1,start[1]), (start[0],start[1]+1)}:
+        pipe_map[start] = "F"
+    
+    pipe_loop_set = set(pipe_loop)
+    
+    enclosed = 0
+    for i in range(rows):
+        inside = False
+        for j in range(cols):
+            if (i,j) in pipe_loop_set:
+                if pipe_map[i,j] in {"|", "L", "J"}:
+                    inside = not inside
+            
+            elif (i,j) not in pipe_loop_set and inside:
+                enclosed += 1
+          
+    # Return results
+    return farthest_steps, enclosed
+        
